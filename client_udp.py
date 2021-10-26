@@ -19,6 +19,7 @@ client sends file to server, server saves the file and anonymizes it
 https://github.com/preetha2711/Stop-and-Wait-Protocol
 https://github.com/nikhilroxtomar/Stop-and-Wait-Protocol-Implemented-in-UDP-C
 https://stackoverflow.com/questions/15909064/python-implementation-for-stop-and-wait-algorithm
+https://github.com/z9z/reliable_data_transfer
 
 sender server
 receive client
@@ -29,13 +30,6 @@ import socket
 import sys
 import os
 
-IP = sys.argv[1]  # socket.gethostbyname(socket.gethostname())
-PORT = sys.argv[2]  # 4455
-ADDR = (IP, PORT)
-FORMAT = "utf-8"
-download_dir = os.getcwd()  # download in same folder (working directory
-SIZE = 1024
-client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 """
 receive filename
@@ -48,32 +42,60 @@ send message to client when done
 
 def main():
 
+    IP = sys.argv[1]  # socket.gethostbyname(socket.gethostname())
+    PORT = sys.argv[2]  # 4455
+    ADDR = (IP, PORT)
+    FORMAT = "utf-8"
+    download_dir = os.getcwd()  # download in same folder (working directory
+    SIZE = 1024
+
+    client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    # client.settimeout(0.5)
+
     while True:
         user_input = input("Enter command:")
         user_input = user_input.split()
         command = user_input[0]
 
-        client.settimeout(0.5)
-
         user_input = input()  # raw_input is input in python 3: https://stackoverflow.com/questions/20332320/pycharm
-        # -builtin-unresolved-reference
 
-        client.send(command.encode(FORMAT))  # send command
+        """Send command"""
+        client.sendto(command.encode(FORMAT), ADDR)
 
-        if command is 'put':
-            input_file = user_input[1]
-        elif command is 'get':
-            output_file = user_input[1]
-        elif command is 'keyword':
+        if command is 'put'.casefold():
+            input_filename = user_input[1]
+            client.sendto(input_filename.encode(FORMAT), ADDR)
+
+            data, ADDR = client.recvfrom(SIZE)
+            data = data.decode(FORMAT)
+            print(f"Server: {data}")
+
+        elif command is 'keyword'.casefold():
             keyword = user_input[1]
-        elif command is 'quit':
+            client.sendto(keyword.encode(FORMAT), ADDR)
+
+            data, ADDR = client.recvfrom(SIZE)
+            data = data.decode(FORMAT)
+            print(f"Server: {data}")
+
+        elif command is 'get'.casefold():
+            output_filename = user_input[1]
+            client.sendto(output_filename.encode(FORMAT), ADDR)
+
+            with open(os.path.join(download_dir, output_filename), 'wb') as output_file:
+                while data:
+                    data = client.recv(SIZE)
+                    output_file.write(data)
+                output_file.close()
+
+            data, ADDR = client.recvfrom(SIZE)
+            data = data.decode(FORMAT)
+            print(f"Server: {data}")
+
+        elif command is 'quit'.casefold():
             print("Exiting program!")
             client.close()
             quit()
-
-
-def receive_ack():
-    pass
 
 
 if __name__ == "__main__":

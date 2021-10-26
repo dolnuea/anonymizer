@@ -1,12 +1,23 @@
 """
 References:
 https://www.youtube.com/watch?v=MEcL0-3k-2c
+Enter command: put test.txt
+ Awaiting server response.
+ Server response: File uploaded.
+ Enter command: keyword Fall test.txt
+ Awaiting server response.
+ Server response: File test.txt anonymized. Output file is
+test_anon.txt
+ Enter command: get test_anon.txt
+ File test_anon.txt downloaded.
+ Enter command: quit
+ Exiting program!
 """
 import socket
 import sys
 
 IP = socket.gethostbyname(socket.gethostname())
-PORT = sys.argv[1]  # 4455
+PORT = int(sys.argv[1])  # 45668
 ADDR = (IP, PORT)
 SIZE = 1024
 FORMAT = "utf-8"
@@ -27,58 +38,76 @@ def main():
     file = ''
     data = None
 
-    # should i close file and reopen at each command?
+    """ Server has accepted the connection from the client. """
+    server, addr = server.accept()
+    print(f"[NEW CONNECTION] {addr} connected.")
+
     while True:
 
-        """ Server has accepted the connection from the client. """
-        conn, addr = server.accept()
-        print(f"[NEW CONNECTION] {addr} connected.")
-
         """Listen to command from client"""
-        command = conn.recv(SIZE).decode(FORMAT)
+        user_input = server.recv(SIZE)
+        user_input = user_input.decode(FORMAT)
+        print(user_input)
+        user_input = user_input.split()
+        command = user_input[0]
 
-        if command is 'PUT'.casefold():
+        if command == 'PUT'.casefold():
+            input_filename = user_input[1]
 
-            """ Receiving the filename from the client. """
-            filename = conn.recv(SIZE).decode(FORMAT)
-            print(f"[RECV] Receiving the filename.")
+            """ Opening and reading the file data. """
+            input_file = open(input_filename, "r")
+            data = input_file.read()
+            print(f"[RECV] File uploaded.")
+            server.send("Server response: File uploaded.".encode(FORMAT))
+            input_file.close()
 
-            output_filename = filename.removesuffix('.txt') + '_anon.txt' # open/create anon text file
-            # https://stackoverflow.com/questions/6224052/what-is-the-difference-between-a-string-and-a-byte-string
-            file = open(output_filename, "wb")
-            conn.send("Filename received.".encode(FORMAT))
-
-            """ Receiving the file data from the client. """
-            data = conn.recv(SIZE).decode(FORMAT)
-            print(f"[RECV] Receiving the file data.")
-            conn.send("File data received".encode(FORMAT))
-
-        elif command is 'keyword'.casefold():
+        elif command == 'keyword'.casefold():
 
             """ Receiving Keyword """
-            keyword = conn.recv(SIZE).decode(FORMAT)
-            print(f"[RECV] Receiving the keyword.")
-            conn.send("Keyword received".encode(FORMAT))
+            keyword = user_input[1]
+
+            output_filename = remove_suffix(input_filename, '.txt') + '_anon.txt' # input_filename.removesuffix('.txt') + '_anon.txt'  # open/create anon text file
+            print(output_filename)
+
+            output_file = open(output_filename, "w")
 
             """ Anonymizing File """
             data = data.replace(keyword, ''.join('X' * len(keyword)))
-            file.write(data)
-            conn.send("File is anonymized".encode(FORMAT))
+            output_file.write(data)
 
-        elif command is 'GET'.casefold():
+            print(f"[RECV] Server response: File %s anonymized. Output file is %s." % (input_filename, output_filename))
+            message = "Server response: File %s anonymized. Output file is %s." % (input_filename, output_filename)
+            server.send(message.encode(FORMAT))
+            output_file.close()
+
+        elif command == 'GET'.casefold():
 
             #  https://stackoverflow.com/questions/29110620/how-to-download-file-from-local-server-in-python
+            file = open(output_filename, "br")
+
+            print(f"[RECV] File %s downloaded." % output_filename)
+            message = "File %s downloaded." % output_filename
+            server.send(message.encode(FORMAT))
+
             """Send output data to client"""
             for data in file:
-                conn.sendall(data)
+                server.sendall(data)
 
             """ Closing the file. """
             file.close()
 
-        elif command is 'exit'.casefold():
+        elif command == 'quit'.casefold():
             """ Closing the connection from the client. """
-            conn.close()
             print(f"[DISCONNECTED] {addr} disconnected.")
+            break
+
+    server.close()
+
+
+def remove_suffix(input_string, suffix):
+    if suffix and input_string.endswith(suffix):
+        return input_string[:-len(suffix)]
+    return input_string
 
 
 if __name__ == "__main__":
