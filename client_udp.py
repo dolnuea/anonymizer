@@ -19,6 +19,9 @@ client sends file to server, server saves the file and anonymizes it
 https://github.com/preetha2711/Stop-and-Wait-Protocol
 https://github.com/nikhilroxtomar/Stop-and-Wait-Protocol-Implemented-in-UDP-C
 https://stackoverflow.com/questions/15909064/python-implementation-for-stop-and-wait-algorithm
+https://stackoverflow.com/questions/5343358/stop-and-wait-socket-programming-with-udp#:~:text=The%20stop%20and%20wait%20protocol,before%20sending%20the%20next%20packet.
+https://github.com/mj2266/stop-and-wait-protocol
+https://github.com/z9z/reliable_data_transfer
 https://github.com/z9z/reliable_data_transfer
 
 sender server

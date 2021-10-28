@@ -29,46 +29,33 @@ def main():
 
         client.send(user_input.encode(FORMAT))  # send command
 
-        print("Awaiting server response.")
-        print(client.recv(SIZE).decode(FORMAT))
+        if command == 'put'.casefold():
+            input_filename = split_input[1]
+            print("Awaiting server response.")
+            print(client.recv(SIZE).decode(FORMAT))
 
-        # if command is 'put'.casefold():
-        #     input_filename = split_input[1]
-        #
-        #     """ Opening and reading the file data. """
-        #     file = open(input_filename, "r")
-        #     data = file.read()
-        #
-        #     """ Sending the filename to the server. """
-        #     client.send(input_filename.encode(FORMAT))
-        #     msg = client.recv(SIZE).decode(FORMAT)
-        #     print(f"[SERVER]: {msg}")
-        #
-        #     """ Sending the file data to the server. """
-        #     client.send(data.encode(FORMAT))
-        #     msg = client.recv(SIZE).decode(FORMAT)
-        #     print(f"[SERVER]: {msg}")
-        #
-        #     """ Closing the file. """
-        #     file.close()
+        elif command == 'keyword'.casefold():
+            print("Awaiting server response.")
+            print(client.recv(SIZE).decode(FORMAT))
 
-        # elif command is 'keyword'.casefold():
-        #     keyword = split_input[1]
-        #     # sent keyword to server
-        #     client.send(keyword.encode(FORMAT))
-        #     msg = client.recv(SIZE).decode(FORMAT)
-        #     print(f"[SERVER]: {msg}")
-
-        if command == 'get'.casefold():
+        elif command == 'get'.casefold():
+            print("Awaiting server response.")
+            print(client.recv(SIZE).decode(FORMAT))
             output_filename = split_input[1]
-            data = client.recv(SIZE)
+
             # download a file created by server
             #  https://stackoverflow.com/questions/29110620/how-to-download-file-from-local-server-in-python
-            with open(os.path.join(download_dir, output_filename), 'wb') as output_file:
-                if not data:
-                    break
-                output_file.write(data)
-                output_file.close()
+
+            output_file = open(output_filename, "w")
+
+            file_size = os.path.getsize(input_filename)
+            print(file_size)  # 14480
+
+            data = client.recv(file_size).decode(FORMAT)
+
+            output_file.write(data)
+
+            output_file.close()
 
         elif command == 'quit'.casefold():
             print("Exiting program!")
