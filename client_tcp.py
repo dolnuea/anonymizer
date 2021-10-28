@@ -6,11 +6,10 @@ import socket
 import sys
 import os
 
-IP = socket.gethostbyname(socket.gethostname())  # sys.argv[1]
-PORT = int(sys.argv[1])  # 4455
+IP = sys.argv[1] # 127.0.1.1
+PORT = int(sys.argv[2])  # 4455
 ADDR = (IP, PORT)
 FORMAT = "utf-8"
-download_dir = os.getcwd()  # download in same folder (working directory
 SIZE = 1024
 
 
@@ -43,13 +42,13 @@ def main():
             print(client.recv(SIZE).decode(FORMAT))
             output_filename = split_input[1]
 
-            # download a file created by server
+            # download a file created by server. Reference:
             #  https://stackoverflow.com/questions/29110620/how-to-download-file-from-local-server-in-python
 
             output_file = open(output_filename, "w")
 
             file_size = os.path.getsize(input_filename)
-            print(file_size)  # 14480
+            print(file_size)
 
             data = client.recv(file_size).decode(FORMAT)
 
