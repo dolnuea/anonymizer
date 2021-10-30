@@ -1,17 +1,7 @@
 """
-References:
-https://www.youtube.com/watch?v=MEcL0-3k-2c
-Enter command: put test.txt
- Awaiting server response.
- Server response: File uploaded.
- Enter command: keyword Fall test.txt
- Awaiting server response.
- Server response: File test.txt anonymized. Output file is
-test_anon.txt
- Enter command: get test_anon.txt
- File test_anon.txt downloaded.
- Enter command: quit
- Exiting program!
+For the base of TCP implementation for both server and client,
+I have used the reference, https://www.youtube.com/watch?v=MEcL0-3k-2c,
+which is an example of sending and receiving a file in TCP connection.
 """
 import os
 import socket
@@ -22,10 +12,10 @@ PORT = int(sys.argv[1])  # 4450
 ADDR = (IP, PORT)
 SIZE = 1024
 FORMAT = "utf-8"
-# download_dir = os.getcwd()  # download in same folder (working directory
 
 
 def main():
+    """This will tell the IP address (I put it for easiness)"""
     print("IP: " + socket.gethostbyname(socket.gethostname()))
     print("[STARTING] Server is starting.")
 
@@ -42,6 +32,8 @@ def main():
     """ Server has accepted the connection from the client. """
     server, addr = server.accept()
     print(f"[NEW CONNECTION] {addr} connected.")
+
+    message = None
 
     while True:
 
@@ -62,31 +54,43 @@ def main():
             input_file = open(input_filename, "w+")
 
             """Receive the filesize from the client"""
-            file_size = server.recv(SIZE).decode(FORMAT)
-            # print(file_size)
+            file_size = server.recv(SIZE).decode(FORMAT)  # how to separate messages? size?
+            print(file_size)
 
             """Receive the contents of the original file from the server"""
+            # Problem: it takes the size and the whole file data as "file size"
             data = server.recv(int(file_size)).decode(FORMAT)
             """Write the contents of the original file into input file"""
             input_file.write(data)
             """Close the file"""
             input_file.close()
 
-            # """ Opening and reading the file data. """
-            # input_file = open(input_filename, "r")
-            # data = input_file.read()
+            # stays hanging
+            # while True:
+            #     data = server.recv(int(file_size)).decode(FORMAT)
+            #     print(data)
+            #     if not data:
+            #         break
+            #     input_file.write(data)
+            #
+            # input_file.close()
+
             print(f"[RECV] File uploaded.")
             message = "Server response: File uploaded."
-            # input_file.close()
 
         # Anonymize the file
         elif command == 'keyword'.casefold():
 
-            """ Receiving Keyword """
+            """ Receiving Keyword and target file"""
             keyword = user_input[1]
+            file_name = user_input[2]
+
+            """Read file"""
+            file = open(file_name, 'r')
+            data = file.read()
 
             """Generate the output file name"""
-            output_filename = remove_suffix(input_filename, '.txt') + '_anon.txt'
+            output_filename = remove_suffix(file_name, '.txt') + '_anon.txt'
             print(output_filename)
 
             """Open the output file with write permission"""
@@ -96,8 +100,8 @@ def main():
             data = data.replace(keyword, ''.join('X' * len(keyword)))
             output_file.write(data)
 
-            print(f"[RECV] Server response: File %s anonymized. Output file is %s." % (input_filename, output_filename))
-            message = "Server response: File %s anonymized. Output file is %s." % (input_filename, output_filename)
+            print(f"[RECV] Server response: File %s anonymized. Output file is %s." % (file_name, output_filename))
+            message = "Server response: File %s anonymized. Output file is %s." % (file_name, output_filename)
             output_file.close()
 
             file_size = os.path.getsize(output_filename)
@@ -113,7 +117,6 @@ def main():
 
             """Send the file size to the Client"""
             file_size = os.path.getsize(output_filename)
-            print(file_size)
             server.send(str(file_size).encode(FORMAT))  # send the file size
 
             """Send over the contents if the output file to the Client"""
@@ -135,7 +138,15 @@ def main():
     server.close()
 
 
-# https://stackoverflow.com/questions/66683630/removesuffix-returns-error-str-object-has-no-attribute-removesuffix
+"""
+This is a helper function to rename an output file after anonymization. 
+The reason why I implemented this function is because remove_suffix function
+does not exist in early versions of python (available in 3.9+). Therefore, I have used this source,
+https://stackoverflow.com/questions/66683630/removesuffix-returns-error-str-object-has-no-attribute-removesuffix
+to name output files.
+"""
+
+
 def remove_suffix(input_string, suffix):
     if suffix and input_string.endswith(suffix):
         return input_string[:-len(suffix)]

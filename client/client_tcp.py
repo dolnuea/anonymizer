@@ -13,7 +13,6 @@ PORT = int(sys.argv[2])  # 4455
 ADDR = (IP, PORT)
 FORMAT = "utf-8"
 SIZE = 1024
-# download_dir = os.getcwd()  # download in working dir
 
 
 def main():
@@ -50,12 +49,18 @@ def main():
             file_size = os.path.getsize(input_filename)
             """send the file size over to the server"""
             client.send(str(file_size).encode(FORMAT))
+            # print(str(file_size))
 
             """send the contents of the input file to the server"""
             client.send(content.encode(FORMAT))
-
             """ Closing the file. """
             file.close()
+
+            # stays hanging
+            # for data in file:
+            #     print(data)
+            #     client.sendall(bytes(data))
+            # file.close()
 
         # Download the file from the Server
         elif command == 'GET'.casefold():
@@ -68,7 +73,7 @@ def main():
 
             """receive the filesize from the server"""
             file_size = client.recv(SIZE).decode(FORMAT)
-            print(file_size)
+            # print(file_size)
 
             """receive the content if file from the server"""
             data = client.recv(int(file_size)).decode(FORMAT)
