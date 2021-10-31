@@ -2,6 +2,7 @@
 For the base of TCP implementation for both server and client,
 I have used the reference, https://www.youtube.com/watch?v=MEcL0-3k-2c,
 which is an example of sending and receiving a file in TCP connection.
+https://stackoverflow.com/questions/17667903/python-socket-receive-large-amount-of-data
 """
 import os
 import socket
@@ -21,6 +22,8 @@ def main():
 
     """ Staring a TCP socket. """
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # https://stackoverflow.com/questions/31826762/python-socket-send-immediately
+    server.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
     """ Bind the IP and PORT to the server. """
     server.bind(ADDR)
@@ -132,7 +135,6 @@ def main():
         elif command == 'quit'.casefold():
             """ Closing the connection from the client. """
             print(f"[DISCONNECTED] {addr} disconnected.")
-            break
 
         server.send(message.encode(FORMAT))  # send message to client
     server.close()

@@ -47,6 +47,9 @@ def main():
     """ Connecting to the server. """
     client.connect(ADDR)
 
+    """Set server timeout"""
+    client.settimeout(1)  # timeout is 1 second
+
     """Continue getting input from the user until user quits"""
     while True:
 
