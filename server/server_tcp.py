@@ -18,126 +18,129 @@ FORMAT = "utf-8"
 def main():
     """This will tell the IP address (I put it for easiness)"""
     print("IP: " + socket.gethostbyname(socket.gethostname()))
-    print("[STARTING] Server is starting.")
-
-    """ Staring a TCP socket. """
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # https://stackoverflow.com/questions/31826762/python-socket-send-immediately
-    server.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-
-    """ Bind the IP and PORT to the server. """
-    server.bind(ADDR)
-
-    """ Server is listening, i.e., server is now waiting for the client to connected. """
-    server.listen()
-    print("[LISTENING] Server is listening.")
-
-    """ Server has accepted the connection from the client. """
-    server, addr = server.accept()
-    print(f"[NEW CONNECTION] {addr} connected.")
 
     message = None
 
     while True:
+        print("[STARTING] Server is starting.")
 
-        """Listen to command from client"""
-        user_input = server.recv(SIZE)
-        user_input = user_input.decode(FORMAT)
-        print(user_input)
+        """ Staring a TCP socket. """
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # https://stackoverflow.com/questions/31826762/python-socket-send-immediately
+        server.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
-        user_input = user_input.split()
-        command = user_input[0]
+        """ Bind the IP and PORT to the server. """
+        server.bind(ADDR)
 
-        """Upload the file into the server from the Client"""
-        if command == 'PUT'.casefold():
+        """ Server is listening, i.e., server is now waiting for the client to connected. """
+        server.listen()
+        print("[LISTENING] Server is listening.")
 
-            """Get the file name from the command"""
-            input_filename = user_input[1]
-            """Open the file with write permission"""
-            input_file = open(input_filename, "w+")
+        """ Server has accepted the connection from the client. """
+        server, addr = server.accept()
+        print(f"[NEW CONNECTION] {addr} connected.")
 
-            """Receive the filesize from the client"""
-            file_size = server.recv(SIZE).decode(FORMAT)  # how to separate messages? size?
-            print(file_size)
+        while True:
 
-            """Receive the contents of the original file from the server"""
-            # Problem: it takes the size and the whole file data as "file size"
-            data = server.recv(int(file_size)).decode(FORMAT)
-            """Write the contents of the original file into input file"""
-            input_file.write(data)
-            """Close the file"""
-            input_file.close()
+            """Listen to command from client"""
+            user_input = server.recv(SIZE)
+            user_input = user_input.decode(FORMAT)
+            print(user_input)
 
-            # stays hanging
-            # while True:
-            #     data = server.recv(int(file_size)).decode(FORMAT)
-            #     print(data)
-            #     if not data:
-            #         break
-            #     input_file.write(data)
-            #
-            # input_file.close()
+            user_input = user_input.split()
+            command = user_input[0]
 
-            print(f"[RECV] File uploaded.")
-            message = "Server response: File uploaded."
+            """Upload the file into the server from the Client"""
+            if command == 'PUT'.casefold():
 
-        # Anonymize the file
-        elif command == 'keyword'.casefold():
+                """Get the file name from the command"""
+                input_filename = user_input[1]
+                """Open the file with write permission"""
+                input_file = open(input_filename, "w+")
 
-            """ Receiving Keyword and target file"""
-            keyword = user_input[1]
-            file_name = user_input[2]
+                """Receive the filesize from the client"""
+                file_size = server.recv(SIZE).decode(FORMAT)  # how to separate messages? size?
+                print(file_size)
 
-            """Read file"""
-            file = open(file_name, 'r')
-            data = file.read()
+                """Receive the contents of the original file from the server"""
+                # Problem: it takes the size and the whole file data as "file size"
+                data = server.recv(int(file_size)).decode(FORMAT)
+                """Write the contents of the original file into input file"""
+                input_file.write(data)
+                """Close the file"""
+                input_file.close()
 
-            """Generate the output file name"""
-            output_filename = remove_suffix(file_name, '.txt') + '_anon.txt'
-            print(output_filename)
+                # stays hanging
+                # while True:
+                #     data = server.recv(int(file_size)).decode(FORMAT)
+                #     print(data)
+                #     if not data:
+                #         break
+                #     input_file.write(data)
+                #
+                # input_file.close()
 
-            """Open the output file with write permission"""
-            output_file = open(output_filename, 'w+')
+                print(f"[RECV] File uploaded.")
+                message = "Server response: File uploaded."
 
-            """ Anonymizing File """
-            data = data.replace(keyword, ''.join('X' * len(keyword)))
-            output_file.write(data)
+            # Anonymize the file
+            elif command == 'keyword'.casefold():
 
-            print(f"[RECV] Server response: File %s anonymized. Output file is %s." % (file_name, output_filename))
-            message = "Server response: File %s anonymized. Output file is %s." % (file_name, output_filename)
-            output_file.close()
+                """ Receiving Keyword and target file"""
+                keyword = user_input[1]
+                file_name = user_input[2]
 
-            file_size = os.path.getsize(output_filename)
-            print(file_size)
+                """Read file"""
+                file = open(file_name, 'r')
+                data = file.read()
 
-        elif command == 'GET'.casefold():
+                """Generate the output file name"""
+                output_filename = remove_suffix(file_name, '.txt') + '_anon.txt'
+                print(output_filename)
 
-            """Get the output file name from the command"""
-            output_filename = user_input[1]
+                """Open the output file with write permission"""
+                output_file = open(output_filename, 'w+')
 
-            """Open the output file with write permission"""
-            output_file = open(output_filename, "r")  # open file in read format
+                """ Anonymizing File """
+                data = data.replace(keyword, ''.join('X' * len(keyword)))
+                output_file.write(data)
 
-            """Send the file size to the Client"""
-            file_size = os.path.getsize(output_filename)
-            server.send(str(file_size).encode(FORMAT))  # send the file size
+                print(f"[RECV] Server response: File %s anonymized. Output file is %s." % (file_name, output_filename))
+                message = "Server response: File %s anonymized. Output file is %s." % (file_name, output_filename)
+                output_file.close()
 
-            """Send over the contents if the output file to the Client"""
-            content = output_file.read()  # read the contents in the anonymized file
-            server.send(content.encode(FORMAT))  # send the contents of the output file to the client
+                file_size = os.path.getsize(output_filename)
+                print(file_size)
 
-            """ Closing the file. """
-            output_file.close()
+            elif command == 'GET'.casefold():
 
-            print(f"[RECV] File %s downloaded." % output_filename)
-            message = "File %s downloaded." % output_filename
+                """Get the output file name from the command"""
+                output_filename = user_input[1]
 
-        elif command == 'quit'.casefold():
-            """ Closing the connection from the client. """
-            print(f"[DISCONNECTED] {addr} disconnected.")
+                """Open the output file with write permission"""
+                output_file = open(output_filename, "r")  # open file in read format
 
-        server.send(message.encode(FORMAT))  # send message to client
-    server.close()
+                """Send the file size to the Client"""
+                file_size = os.path.getsize(output_filename)
+                server.send(str(file_size).encode(FORMAT))  # send the file size
+
+                """Send over the contents if the output file to the Client"""
+                content = output_file.read()  # read the contents in the anonymized file
+                server.send(content.encode(FORMAT))  # send the contents of the output file to the client
+
+                """ Closing the file. """
+                output_file.close()
+
+                print(f"[RECV] File %s downloaded." % output_filename)
+                message = "File %s downloaded." % output_filename
+
+            elif command == 'quit'.casefold():
+                """ Closing the connection from the client. """
+                print(f"[DISCONNECTED] {addr} disconnected.")
+                break
+
+            server.send(message.encode(FORMAT))  # send message to client
+        server.close()
 
 
 """
