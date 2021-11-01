@@ -81,7 +81,7 @@ def main():
             data = data.replace(keyword, ''.join('X' * len(keyword)))
             output_file.write(data)
 
-            print(f"[RECV] Server response: File %s anonymized. Output file is %s." % (file_name, output_filename))
+            print(f"[RECV] File %s anonymized. Output file is %s." % (file_name, output_filename))
             message = "Server response: File %s anonymized. Output file is %s." % (file_name, output_filename)
             output_file.close()
 
@@ -95,14 +95,11 @@ def main():
             """Get the output file name from the command"""
             output_filename = user_input[1]
 
+            """Stop and wait sender"""
             sender(output_filename, addr, server)
+
             """Remove timeout"""
             server.settimeout(60)
-
-            print(f"[RECV] File %s downloaded." % output_filename)
-            message = "File %s downloaded." % output_filename
-
-            server.sendto(message.encode(FORMAT), addr)  # send message to client
 
         elif command == 'quit'.casefold():
             """ Closing the connection from the client. """
@@ -210,9 +207,6 @@ def receiver(filename, conn):
             print(message)
             file.close()
             return
-
-        # reset timeout
-        conn.settimeout(60)
 
         try:
             """Set server timeout: received message is written to file fix is stop once size is reached"""

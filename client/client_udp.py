@@ -26,7 +26,6 @@ https://github.com/z9z/reliable_data_transfer
 
 sender server
 receive client
-
 """
 import os
 import socket
@@ -58,39 +57,49 @@ def main():
         """send the commands to the Server"""
         client.sendto(user_input.encode(FORMAT), ADDR)
 
-        print("Awaiting server response.")
-
         """Upload the file into the server"""
         if command == 'PUT'.casefold():
+            print("Awaiting server response.")
 
             """get the file name from the command line argument"""
             input_filename = split_input[1]
 
+            """Stop and wait Sender"""
             sender(input_filename, ADDR, client)
 
             """Remove timeout"""
             client.settimeout(60)
 
+            """receive the message from the server"""
+            message, addr = client.recvfrom(SIZE)
+            print(message.decode(FORMAT))
+
+        elif command == 'keyword'.casefold():
+            print("Awaiting server response.")
+
+            """receive the message from the server"""
+            message, addr = client.recvfrom(SIZE)
+            print(message.decode(FORMAT))
+
         # Download the file from the Server
         elif command == 'GET'.casefold():
 
-            """extract the output file name from the command line arguments"""
+            """Get the output file name from the command line arguments"""
             output_filename = split_input[1]
 
+            """Stop and wait receiver"""
             receiver(output_filename, client)
 
             """Remove timeout"""
             client.settimeout(60)
+
+            print("File %s downloaded." % output_filename)
 
         # quit the program and close connection
         elif command == 'quit'.casefold():
             print("Exiting program!")
             exit(0)
             break
-
-        """receive the message from the server"""
-        message, addr = client.recvfrom(SIZE)
-        print(message.decode(FORMAT))
 
     client.close()
 
@@ -170,16 +179,19 @@ def receiver(filename, conn):
     no data received after length
     no data received after ack
     """
-
+    received_size = 0
     """Check if all expected bytes are received"""
-    while os.path.getsize(filename) != file_size:
+    while True:
+
+        if str(file_size) == str(received_size):
+            break
 
         """write the contents of file into the file"""
         try:
             """receive the content of file from the server"""
             data, source_addr = conn.recvfrom(1000)
             data = data.decode(FORMAT)
-
+            received_size += len(data)
             """Set server timeout"""
             conn.settimeout(1)  # timeout is 1 second
 
@@ -189,9 +201,6 @@ def receiver(filename, conn):
             print(message)
             file.close()
             return
-
-        # reset timeout
-        conn.settimeout(60)
 
         try:
             """Set server timeout: received message is written to file fix is stop once size is reached"""
