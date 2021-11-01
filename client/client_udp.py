@@ -30,22 +30,19 @@ receive client
 """
 import socket
 import sys
-import os
+
+from stopandwait import sender, receiver
 
 IP = sys.argv[1]  # 127.0.1.1
 PORT = int(sys.argv[2])  # 4455
 ADDR = (IP, PORT)
 FORMAT = "utf-8"
 SIZE = 1024
-# download_dir = os.getcwd()  # download in working dir
 
 
 def main():
     """ Staring a TCP socket. """
     client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
-    """ Connecting to the server. """
-    client.connect(ADDR)
 
     """Set server timeout"""
     client.settimeout(1)  # timeout is 1 second
@@ -60,7 +57,7 @@ def main():
         command = split_input[0]
 
         """send the commands to the Server"""
-        client.sendall(user_input.encode(FORMAT))
+        client.sendto(user_input.encode(FORMAT), ADDR)
 
         print("Awaiting server response.")
 
@@ -70,19 +67,11 @@ def main():
             """get the file name from the command line argument"""
             input_filename = split_input[1]
 
-            """open file in read permission"""
-            file = open(input_filename, "r")
-            """read the contents in the original file"""
-            content = file.read()
-            file_size = os.path.getsize(input_filename)
-            """send the file size over to the server"""
-            client.sendall(str(file_size).encode(FORMAT))
+            sender(input_filename, ADDR, client)
+            """Remove timeout"""
+            client.settimeout(60)
 
-            """send the contents of the input file to the server"""
-            client.sendall(content.encode(FORMAT))
 
-            """ Closing the file. """
-            file.close()
 
         # Download the file from the Server
         elif command == 'GET'.casefold():
@@ -90,19 +79,10 @@ def main():
             """extract the output file name from the command line arguments"""
             output_filename = split_input[1]
 
-            """open the output file in write permission: if DNE then create a new file"""
-            output_file = open(output_filename, "w+")
+            receiver(output_filename, client)
 
-            """receive the filesize from the server"""
-            file_size = client.recv(SIZE).decode(FORMAT)
-            print(file_size)
-
-            """receive the content if file from the server"""
-            data = client.recv(int(file_size)).decode(FORMAT)
-            """write the contents of file into the file"""
-            output_file.write(data)
-            """close the file"""
-            output_file.close()
+            """Remove timeout"""
+            client.settimeout(60)
 
         # quit the program and close connection
         elif command == 'quit'.casefold():
@@ -111,7 +91,8 @@ def main():
             break
 
         """receive the message from the server"""
-        print(client.recv(SIZE).decode(FORMAT))
+        message, addr = client.recvfrom(SIZE)
+        print(message.decode(FORMAT))
 
     client.close()
 
