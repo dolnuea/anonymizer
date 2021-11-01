@@ -1,30 +1,25 @@
 """
-Custom stop-and-wait reliability over UDP
-References
-client sends file to server, server saves the file and anonymizes it
-https://github.com/preetha2711/Stop-and-Wait-Protocol
-https://github.com/nikhilroxtomar/Stop-and-Wait-Protocol-Implemented-in-UDP-C
-https://stackoverflow.com/questions/15909064/python-implementation-for-stop-and-wait-algorithm
-https://stackoverflow.com/questions/5343358/stop-and-wait-socket-programming-with-udp#:~:text=The%20stop%20and%20wait%20protocol,before%20sending%20the%20next%20packet.
-https://github.com/mj2266/stop-and-wait-protocol
-https://github.com/z9z/reliable_data_transfer
-https://www.isi.edu/nsnam/DIRECTED_RESEARCH/DR_HYUNAH/D-Research/stop-n-wait.html
-https://stackoverflow.com/questions/15705948/python-socketserver-timeout
-timeout issue
-Did not receive data. Terminating.
-client didnt print message bc it was not fully received
+Luna Dagci
+ICSI 516
+11/01/2021
+Project 1
+
+UDP Server using stop and wait algorithm for data transport
+reliability.
 """
+
 import os
 import socket
 import sys
 
 IP = socket.gethostbyname(socket.gethostname())
-PORT = int(sys.argv[1])  # 4450
-SIZE = 1024
+PORT = int(sys.argv[1])
+SIZE = 1000  # Size is 1000 bytes
 FORMAT = "utf-8"
 
 
 def main():
+    """Tell the IP to provide easiness and faster IP search for the user"""
     print("IP: " + socket.gethostbyname(socket.gethostname()))
 
     """ Staring a UDP socket. """
@@ -106,15 +101,31 @@ def main():
             print(f"[DISCONNECTED] {addr} disconnected.")
 
 
-# https://stackoverflow.com/questions/66683630/removesuffix-returns-error-str-object-has-no-attribute-removesuffix
+"""
+This is a helper function to rename an output file after anonymization. 
+The reason why I implemented this function is because remove_suffix function
+does not exist in early versions of python (available in 3.9+). Therefore, I have used this source,
+https://stackoverflow.com/questions/66683630/removesuffix-returns-error-str-object-has-no-attribute-removesuffix
+to name output files.
+"""
+
+
 def remove_suffix(input_string, suffix):
     if suffix and input_string.endswith(suffix):
         return input_string[:-len(suffix)]
     return input_string
 
 
+"""Stop-and-wait Helper Functions : Receiver and Sender"""
+
+
 def sender(filename, dest_addr, conn):
     """
+    :param filename: file name entered by user
+    :param dest_addr: address to send data chunks to
+    :param conn: socket connection
+    :return: boolean indicating acknowledged or not
+
     Data Sender receives the acknowledgement.
     'GET' in server and 'PUT' in client
     """
@@ -138,8 +149,7 @@ def sender(filename, dest_addr, conn):
     Resource: https://www.codegrepper.com/code-examples/python/python+split+array+into+chunks+of+size+n
     """
     byte_chunks = ([*data])
-    byte_size = 1000
-    data_chunks = [byte_chunks[x:x + byte_size] for x in range(0, len(byte_chunks), byte_size)]
+    data_chunks = [byte_chunks[x:x + SIZE] for x in range(0, len(byte_chunks), SIZE)]
 
     """Send the data packets to the server, 1000 bytes a time
     Resource: https://stackoverflow.com/questions/15909064/python-implementation-for-stop-and-wait-algorithm
@@ -151,9 +161,11 @@ def sender(filename, dest_addr, conn):
         acknowledged = False
         while not acknowledged:
             try:
-                """Set server timeout"""
+                """Send data chunk to receiver"""
                 conn.sendto(''.join(data_chunk).encode(FORMAT), dest_addr)
+                """Set server timeout"""
                 conn.settimeout(1)  # timeout is 1 second
+                """Receive message containing ACK or FIN"""
                 message, addr = conn.recvfrom(SIZE)
                 message = message.decode(FORMAT)
 
@@ -172,36 +184,45 @@ def sender(filename, dest_addr, conn):
 
 def receiver(filename, conn):
     """
+
+    :param filename: file name entered by the user
+    :param conn: socket connection
+    :return: void
+
     Data Receiver sends the acknowledgement
-    :return:
     """
 
     """open the output file in write permission: if DNE then create a new file"""
     file = open(filename, "w+")
 
     """receive the filesize from the server"""
-    file_size, source_addr = conn.recvfrom(SIZE)
+    LEN, source_addr = conn.recvfrom(SIZE)
 
-    file_size = file_size.decode(FORMAT)
+    LEN = LEN.decode(FORMAT)
 
-    """
-    no data received after length
-    no data received after ack
-    """
-
+    """Initial received size is 0 bytes"""
+    received_size = 0
     """Check if all expected bytes are received"""
-    while os.path.getsize(filename) != file_size:
+    while True:
+
+        """
+        Check if all expected bytes are received
+        Comments: converted to string due to a bug
+        """
+        if str(LEN) == str(received_size):
+            break
 
         """write the contents of file into the file"""
         try:
             """receive the content of file from the server"""
-            data, source_addr = conn.recvfrom(1000)
+            data, source_addr = conn.recvfrom(SIZE)
             data = data.decode(FORMAT)
-
+            """Recalculate received bytes"""
+            received_size += len(data)
             """Set server timeout"""
             conn.settimeout(1)  # timeout is 1 second
 
-            """Timeout after LEN message: need fix"""
+            """Timeout after LEN message"""
         except socket.timeout:
             message = "Did not receive data. Terminating."
             print(message)
@@ -209,7 +230,7 @@ def receiver(filename, conn):
             return
 
         try:
-            """Set server timeout: received message is written to file fix is stop once size is reached"""
+            """Set server timeout"""
             file.write(data)
             conn.sendto("ACK".encode(FORMAT), source_addr)
             conn.settimeout(1)  # timeout is 1 second
