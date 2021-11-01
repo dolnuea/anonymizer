@@ -3,7 +3,6 @@
  to come in, and every time you receive, you send an
  acknowledgement.
 """
-
 import os
 import socket
 
@@ -82,6 +81,11 @@ def receiver(filename, conn):
 
     file_size = file_size.decode(FORMAT)
 
+    """
+    no data received after length
+    no data received after ack
+    """
+
     while True:
 
         """write the contents of file into the file"""
@@ -93,18 +97,18 @@ def receiver(filename, conn):
                 conn.sendto("FIN".encode(FORMAT), source_addr)
                 break
 
-            """Set server timeout"""
-            conn.settimeout(1)  # timeout is 1 second
-
             """receive the content of file from the server"""
             data, source_addr = conn.recvfrom(1000)
             data = data.decode(FORMAT)
 
+            """Set server timeout"""
+            conn.settimeout(1)  # timeout is 1 second
+
             try:
                 """Set server timeout"""
-                conn.settimeout(1)  # timeout is 1 second
                 file.write(data)
                 conn.sendto("ACK".encode(FORMAT), source_addr)
+                conn.settimeout(1)  # timeout is 1 second
 
                 """Timeout after ACK"""
             except socket.timeout:
