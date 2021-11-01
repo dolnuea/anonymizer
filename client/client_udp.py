@@ -38,6 +38,7 @@ ADDR = (IP, PORT)
 FORMAT = "utf-8"
 SIZE = 1024
 
+
 def main():
     """ Staring a TCP socket. """
     client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -92,6 +93,8 @@ def main():
         print(message.decode(FORMAT))
 
     client.close()
+
+
 def sender(filename, dest_addr, conn):
     """
     Data Sender receives the acknowledgement.
@@ -168,17 +171,11 @@ def receiver(filename, conn):
     no data received after ack
     """
 
-    while True:
+    """Check if all expected bytes are received"""
+    while os.path.getsize(filename) != file_size:
 
         """write the contents of file into the file"""
         try:
-
-            """Check if all expected bytes are received"""
-            if os.path.getsize(filename) == file_size:
-                file.close()
-                conn.sendto("FIN".encode(FORMAT), source_addr)
-                break
-
             """receive the content of file from the server"""
             data, source_addr = conn.recvfrom(1000)
             data = data.decode(FORMAT)
@@ -186,25 +183,31 @@ def receiver(filename, conn):
             """Set server timeout"""
             conn.settimeout(1)  # timeout is 1 second
 
-            try:
-                """Set server timeout"""
-                file.write(data)
-                conn.sendto("ACK".encode(FORMAT), source_addr)
-                conn.settimeout(1)  # timeout is 1 second
-
-                """Timeout after ACK"""
-            except socket.timeout:
-                message = "Data transmission terminated prematurely."
-                print(message)
-                file.close()
-                return
-
-            """Timeout after LEN message"""
+            """Timeout after LEN message: need fix"""
         except socket.timeout:
             message = "Did not receive data. Terminating."
             print(message)
             file.close()
             return
+
+        # reset timeout
+        conn.settimeout(60)
+
+        try:
+            """Set server timeout: received message is written to file fix is stop once size is reached"""
+            file.write(data)
+            conn.sendto("ACK".encode(FORMAT), source_addr)
+            conn.settimeout(1)  # timeout is 1 second
+
+            """Timeout after ACK"""
+        except socket.timeout:
+            message = "Data transmission terminated prematurely."
+            print(message)
+            file.close()
+            return
+
+    file.close()
+    conn.sendto("FIN".encode(FORMAT), source_addr)
 
 
 if __name__ == "__main__":
