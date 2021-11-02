@@ -19,9 +19,6 @@ FORMAT = "utf-8"
 
 
 def main():
-    """Tell the IP to provide easiness and faster IP search for the user"""
-    print("IP: " + socket.gethostbyname(socket.gethostname()))
-
     """ Staring a UDP socket. """
     server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
@@ -33,10 +30,11 @@ def main():
         """get to command from client"""
         user_input, addr = server.recvfrom(SIZE)
         user_input = user_input.decode(FORMAT)
-        print(user_input)
+
+        print(f"[RECV]" + user_input)
 
         user_input = user_input.split()
-        command = user_input[0]
+        command = user_input[0].lower()
 
         """Upload the file into the server from the Client"""
         if command == 'PUT'.casefold():
@@ -45,12 +43,15 @@ def main():
             input_filename = user_input[1]
 
             """Stop and wait Receiver"""
-            receiver(input_filename, server)
+            try:
+                receiver(input_filename, server)
+            except socket.timeout:
+                server.close()
 
             """Remove timeout"""
-            server.settimeout(60)
+            server.settimeout(None)
 
-            print(f"[RECV] File uploaded.")
+            print(f"[SUCCESS] File uploaded.")
             message = "Server response: File uploaded."
             server.sendto(message.encode(FORMAT), addr)  # send message to client
 
@@ -76,7 +77,7 @@ def main():
             data = data.replace(keyword, ''.join('X' * len(keyword)))
             output_file.write(data)
 
-            print(f"[RECV] File %s anonymized. Output file is %s." % (file_name, output_filename))
+            print(f"[SUCCESS] File %s anonymized. Output file is %s." % (file_name, output_filename))
             message = "Server response: File %s anonymized. Output file is %s." % (file_name, output_filename)
             output_file.close()
 
@@ -91,10 +92,13 @@ def main():
             output_filename = user_input[1]
 
             """Stop and wait sender"""
-            sender(output_filename, addr, server)
+            try:
+                sender(output_filename, addr, server)
+            except socket.timeout:
+                server.close()
 
             """Remove timeout"""
-            server.settimeout(60)
+            server.settimeout(None)
 
         elif command == 'quit'.casefold():
             """ Closing the connection from the client. """
@@ -204,12 +208,13 @@ def receiver(filename, conn):
     received_size = 0
     """Check if all expected bytes are received"""
     while True:
-
         """
         Check if all expected bytes are received
         Comments: converted to string due to a bug
         """
-        if str(LEN) == str(received_size):
+        if int(LEN) == received_size:
+            file.close()
+            conn.sendto("FIN".encode(FORMAT), source_addr)
             break
 
         """write the contents of file into the file"""
@@ -233,6 +238,7 @@ def receiver(filename, conn):
             """Set server timeout"""
             file.write(data)
             conn.sendto("ACK".encode(FORMAT), source_addr)
+            """Set server timeout"""
             conn.settimeout(1)  # timeout is 1 second
 
             """Timeout after ACK"""
@@ -241,9 +247,6 @@ def receiver(filename, conn):
             print(message)
             file.close()
             return
-
-    file.close()
-    conn.sendto("FIN".encode(FORMAT), source_addr)
 
 
 if __name__ == "__main__":

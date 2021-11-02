@@ -28,7 +28,7 @@ def main():
 
         user_input = input("Enter command:")
         """split the command into parts"""
-        command_args = user_input.split()
+        command_args = user_input.lower().split()
         """get the command"""
         command = command_args[0]
 
@@ -46,11 +46,13 @@ def main():
             sender(input_filename, ADDR, client)
 
             """ 'Remove' timeout"""
-            client.settimeout(60)
+            client.settimeout(None)
 
             """receive the message from the server"""
             message, addr = client.recvfrom(SIZE)
-            print(message.decode(FORMAT))
+            if message.decode(FORMAT) == 'FIN':
+                message, addr = client.recvfrom(SIZE)
+                print(message.decode(FORMAT))
 
         elif command == 'keyword'.casefold():
             print("Awaiting server response.")
@@ -69,7 +71,7 @@ def main():
             receiver(output_filename, client)
 
             """Remove timeout"""
-            client.settimeout(60)
+            client.settimeout(None)
 
             print("File %s downloaded." % output_filename)
 
@@ -78,6 +80,8 @@ def main():
             print("Exiting program!")
             client.close()
             break
+        else:
+            print("Unknown Command")
 
     client.close()
 
@@ -106,10 +110,10 @@ def sender(filename, dest_addr, conn):
     file.close()
 
     """Get the file size, LEN, in string"""
-    LEN = str(os.path.getsize(filename)).encode(FORMAT)
+    LEN = str(get_size(filename))  # str(os.path.getsize(filename))
 
     """Send LEN message"""
-    conn.sendto(LEN, dest_addr)
+    conn.sendto(LEN.encode(FORMAT), dest_addr)
 
     """split the data into equal chunks of 1000 bytes each
     Resource: https://www.codegrepper.com/code-examples/python/python+split+array+into+chunks+of+size+n
@@ -137,9 +141,6 @@ def sender(filename, dest_addr, conn):
 
                 if message == "ACK":
                     acknowledged = True
-
-                elif message == "FIN":
-                    return acknowledged
 
                 """Timeout after a data packet"""
             except socket.timeout:
@@ -212,6 +213,17 @@ def receiver(filename, conn):
 
     file.close()
     conn.sendto("FIN".encode(FORMAT), source_addr)
+
+
+def get_size(filename):
+    file = open(filename, 'r')
+    LEN = 0
+    while True:
+        data = file.read(SIZE)
+        if not data:
+            break
+        LEN += len(data)
+    return LEN
 
 
 if __name__ == "__main__":

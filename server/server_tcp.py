@@ -45,7 +45,7 @@ def main():
             print(user_input)
 
             user_input = user_input.split()
-            command = user_input[0]
+            command = user_input[0].lower()
 
             """Upload the file into the server from the Client"""
             if command == 'PUT'.casefold():
