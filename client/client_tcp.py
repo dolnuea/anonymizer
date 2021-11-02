@@ -1,4 +1,9 @@
 """
+Luna Dagci
+ICSI 516
+11/03/2021
+Project 1
+
 References:
 https://www.youtube.com/watch?v=MEcL0-3k-2c
 https://stackoverflow.com/questions/34252273/what-is-the-difference-between-socket-send-and-socket-sendall/34252690
@@ -40,17 +45,17 @@ def main():
             print("Awaiting server response.")
 
             """get the file name from the command line argument"""
-            input_filename = split_input[1]
+            filename = split_input[1]
 
             """open file in read permission"""
-            file = open(input_filename, "r")
+            file = open(filename, "r")
+
+            data = file.read(SIZE)
 
             """Read and send the contents in the file"""
-            while True:
-                data = file.read(SIZE)
-                if not data:
-                    break
+            while data:
                 client.send(data.encode(FORMAT))
+                data = file.read(SIZE)
 
             """ Closing the file. """
             file.close()
@@ -68,10 +73,10 @@ def main():
         elif command == 'GET'.casefold():
 
             """extract the output file name from the command line arguments"""
-            output_filename = split_input[1]
+            filename = split_input[1]
 
             """open the output file in write permission: if DNE then create a new file"""
-            file = open(output_filename, "w+")
+            file = open(filename, "w+")
 
             """receive the filesize from the server"""
             LEN = client.recv(SIZE).decode(FORMAT)
@@ -100,6 +105,8 @@ def main():
 
             """close the file"""
             file.close()
+
+            print(f"[RECV] File %s downloaded." % filename)
 
             """quit the program and close connection"""
         elif command == 'quit'.casefold():

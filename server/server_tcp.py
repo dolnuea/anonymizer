@@ -1,4 +1,9 @@
 """
+Luna Dagci
+ICSI 516
+11/03/2021
+Project 1
+
 For the base of TCP implementation for both server and client,
 I have used the reference, https://www.youtube.com/watch?v=MEcL0-3k-2c,
 which is an example of sending and receiving a file in TCP connection.
@@ -8,7 +13,7 @@ import os
 import socket
 import sys
 
-IP = socket.gethostbyname(socket.gethostname())
+IP = '169.226.22.20'
 PORT = int(sys.argv[1])
 ADDR = (IP, PORT)
 SIZE = 1000
@@ -18,8 +23,6 @@ FORMAT = "utf-8"
 def main():
     """This will tell the IP address (I put it for easiness)"""
     print("IP: " + socket.gethostbyname(socket.gethostname()))
-
-    message = None
 
     while True:
         print("[STARTING] Server is starting.")
@@ -52,20 +55,21 @@ def main():
             if command == 'PUT'.casefold():
 
                 """Get the file name from the command"""
-                input_filename = user_input[1]
+                filename = user_input[1]
 
                 """open the output file in write permission: if DNE then create a new file"""
-                file = open(input_filename, "w+")
+                file = open(filename, "w+")
+
+                data = server.recv(SIZE).decode(FORMAT)
 
                 """Check if all expected bytes are received"""
-                while True:
+                while data:
+
+                    """write the contents of file into the file"""
+                    file.write(data)
 
                     """receive the content if file from the server"""
                     data = server.recv(SIZE).decode(FORMAT)
-                    if not data or data == '' or data == '\n' or data == '\t' or data == '\n' or data == '\r' or data == 'help pls':
-                        break
-                    """write the contents of file into the file"""
-                    file.write(data)
 
                 """close the file"""
                 file.close()
@@ -81,28 +85,28 @@ def main():
 
                 """ Receiving Keyword and target file"""
                 keyword = user_input[1]
-                file_name = user_input[2]
+                filename = user_input[2]
 
                 """Read file"""
-                file = open(file_name, 'r')
+                file = open(filename, 'r')
                 data = file.read()
 
                 """Generate the output file name"""
-                output_filename = remove_suffix(file_name, '.txt') + '_anon.txt'
-                print(output_filename)
+                filename = remove_suffix(filename, '.txt') + '_anon.txt'
+                print(filename)
 
                 """Open the output file with write permission"""
-                output_file = open(output_filename, 'w+')
+                output_file = open(filename, 'w+')
 
                 """ Anonymizing File """
                 data = data.replace(keyword, ''.join('X' * len(keyword)))
                 output_file.write(data)
 
-                print(f"[RECV] Server response: File %s anonymized. Output file is %s." % (file_name, output_filename))
-                message = "Server response: File %s anonymized. Output file is %s." % (file_name, output_filename)
+                print(f"[RECV] Server response: File %s anonymized. Output file is %s." % (filename, filename))
+                message = "Server response: File %s anonymized. Output file is %s." % (filename, filename)
                 output_file.close()
 
-                file_size = os.path.getsize(output_filename)
+                file_size = os.path.getsize(filename)
                 print(file_size)
 
                 """send message to client"""
@@ -111,10 +115,10 @@ def main():
             elif command == 'GET'.casefold():
 
                 """Get the output file name from the command"""
-                output_filename = user_input[1]
+                filename = user_input[1]
 
                 """open file in read permission"""
-                file = open(output_filename, "r")
+                file = open(filename, "r")
 
                 """read the contents in the original file"""
                 data = file.read()
@@ -123,7 +127,7 @@ def main():
                 file.close()
 
                 """Get the File size"""
-                LEN = str(os.path.getsize(output_filename))
+                LEN = str(get_size(filename))  # str(os.path.getsize(output_filename))
 
                 """send the file size over to the server"""
                 server.send(LEN.encode(FORMAT))
@@ -138,7 +142,7 @@ def main():
                 for data_chunk in data_chunks:
                     server.send(''.join(data_chunk).encode(FORMAT))
 
-                print(f"[RECV] File %s downloaded." % output_filename)
+                print(f"[RECV] File %s downloaded." % filename)
 
             elif command == 'quit'.casefold():
                 """ Closing the connection from the client. """
@@ -161,6 +165,27 @@ def remove_suffix(input_string, suffix):
     if suffix and input_string.endswith(suffix):
         return input_string[:-len(suffix)]
     return input_string
+
+
+def get_size(filename):
+    """open file in read permission"""
+    file = open(filename, "r")
+
+    LEN = 0
+
+    """
+    read the contents in the original file and save the length
+    Comments: os.path.getsize was reading the file size incorrectly
+    """
+    while True:
+        data = file.read(SIZE)
+        if not data:
+            break
+        LEN += len(data)
+
+    """ Closing the file. """
+    file.close()
+    return LEN
 
 
 if __name__ == "__main__":
