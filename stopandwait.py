@@ -93,6 +93,7 @@ def receiver(filename, conn):
 
     """Initial received size is 0 bytes"""
     received_size = 0
+
     """Check if all expected bytes are received"""
     while True:
 

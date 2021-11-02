@@ -9,9 +9,9 @@ import socket
 import sys
 
 IP = socket.gethostbyname(socket.gethostname())
-PORT = int(sys.argv[1])  # 4450
+PORT = int(sys.argv[1])
 ADDR = (IP, PORT)
-SIZE = 1024
+SIZE = 1000
 FORMAT = "utf-8"
 
 
@@ -26,8 +26,6 @@ def main():
 
         """ Staring a TCP socket. """
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # https://stackoverflow.com/questions/31826762/python-socket-send-immediately
-        server.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
         """ Bind the IP and PORT to the server. """
         server.bind(ADDR)
@@ -55,33 +53,28 @@ def main():
 
                 """Get the file name from the command"""
                 input_filename = user_input[1]
-                """Open the file with write permission"""
-                input_file = open(input_filename, "w+")
 
-                """Receive the filesize from the client"""
-                file_size = server.recv(SIZE).decode(FORMAT)  # how to separate messages? size?
-                print(file_size)
+                """open the output file in write permission: if DNE then create a new file"""
+                file = open(input_filename, "w+")
 
-                """Receive the contents of the original file from the server"""
-                # Problem: it takes the size and the whole file data as "file size"
-                data = server.recv(int(file_size)).decode(FORMAT)
-                """Write the contents of the original file into input file"""
-                input_file.write(data)
-                """Close the file"""
-                input_file.close()
+                """Check if all expected bytes are received"""
+                while True:
 
-                # stays hanging
-                # while True:
-                #     data = server.recv(int(file_size)).decode(FORMAT)
-                #     print(data)
-                #     if not data:
-                #         break
-                #     input_file.write(data)
-                #
-                # input_file.close()
+                    """receive the content if file from the server"""
+                    data = server.recv(SIZE).decode(FORMAT)
+                    if not data or data == '' or data == '\n' or data == '\t' or data == '\n' or data == '\r' or data == 'help pls':
+                        break
+                    """write the contents of file into the file"""
+                    file.write(data)
+
+                """close the file"""
+                file.close()
 
                 print(f"[RECV] File uploaded.")
                 message = "Server response: File uploaded."
+
+                """send message to client"""
+                server.send(message.encode(FORMAT))
 
             # Anonymize the file
             elif command == 'keyword'.casefold():
@@ -112,34 +105,46 @@ def main():
                 file_size = os.path.getsize(output_filename)
                 print(file_size)
 
+                """send message to client"""
+                server.send(message.encode(FORMAT))
+
             elif command == 'GET'.casefold():
 
                 """Get the output file name from the command"""
                 output_filename = user_input[1]
 
-                """Open the output file with write permission"""
-                output_file = open(output_filename, "r")  # open file in read format
+                """open file in read permission"""
+                file = open(output_filename, "r")
 
-                """Send the file size to the Client"""
-                file_size = os.path.getsize(output_filename)
-                server.send(str(file_size).encode(FORMAT))  # send the file size
-
-                """Send over the contents if the output file to the Client"""
-                content = output_file.read()  # read the contents in the anonymized file
-                server.send(content.encode(FORMAT))  # send the contents of the output file to the client
+                """read the contents in the original file"""
+                data = file.read()
 
                 """ Closing the file. """
-                output_file.close()
+                file.close()
+
+                """Get the File size"""
+                LEN = str(os.path.getsize(output_filename))
+
+                """send the file size over to the server"""
+                server.send(LEN.encode(FORMAT))
+
+                """split the data into equal chunks of 1000 bytes each
+                    Resource: https://www.codegrepper.com/code-examples/python/python+split+array+into+chunks+of+size+n
+                    """
+                byte_chunks = ([*data])
+                data_chunks = [byte_chunks[x:x + SIZE] for x in range(0, len(byte_chunks), SIZE)]
+
+                """send the contents of the input file to the server"""
+                for data_chunk in data_chunks:
+                    server.send(''.join(data_chunk).encode(FORMAT))
 
                 print(f"[RECV] File %s downloaded." % output_filename)
-                message = "File %s downloaded." % output_filename
 
             elif command == 'quit'.casefold():
                 """ Closing the connection from the client. """
                 print(f"[DISCONNECTED] {addr} disconnected.")
                 break
 
-            server.send(message.encode(FORMAT))  # send message to client
         server.close()
 
 

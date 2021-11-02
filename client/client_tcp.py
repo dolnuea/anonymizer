@@ -9,18 +9,17 @@ import socket
 import sys
 import os
 
-IP = sys.argv[1]  # 127.0.1.1
-PORT = int(sys.argv[2])  # 4455
+IP = sys.argv[1]
+PORT = int(sys.argv[2])
 ADDR = (IP, PORT)
 FORMAT = "utf-8"
-SIZE = 1024
+SIZE = 1000
 
 
 def main():
     """ Staring a TCP socket. """
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # https://stackoverflow.com/questions/31826762/python-socket-send-immediately
-    client.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+
     """ Connecting to the server. """
     client.connect(ADDR)
 
@@ -36,65 +35,99 @@ def main():
         """send the commands to the Server"""
         client.send(user_input.encode(FORMAT))
 
-        print("Awaiting server response.")
-
         """Upload the file into the server"""
         if command == 'PUT'.casefold():
+            print("Awaiting server response.")
 
             """get the file name from the command line argument"""
             input_filename = split_input[1]
 
             """open file in read permission"""
             file = open(input_filename, "r")
-            """read the contents in the original file"""
-            content = file.read()
-            file_size = os.path.getsize(input_filename)
 
-            """send the file size over to the server"""
-            client.send(str(file_size).encode(FORMAT))
-            # print(str(file_size))
+            """Read and send the contents in the file"""
+            while True:
+                data = file.read(SIZE)
+                if not data:
+                    break
+                client.send(data.encode(FORMAT))
 
-            """send the contents of the input file to the server"""
-            client.send(content.encode(FORMAT))
             """ Closing the file. """
             file.close()
 
-            # stays hanging
-            # for data in file:
-            #     print(data)
-            #     client.sendall(bytes(data))
-            # file.close()
+            """receive the message from the server"""
+            print(client.recv(SIZE).decode(FORMAT))
 
-        # Download the file from the Server
+        elif command == 'keyword'.casefold():
+            print("Awaiting server response.")
+
+            """receive the message from the server"""
+            print(client.recv(SIZE).decode(FORMAT))
+
+            """Download the file from the Server"""
         elif command == 'GET'.casefold():
 
             """extract the output file name from the command line arguments"""
             output_filename = split_input[1]
 
             """open the output file in write permission: if DNE then create a new file"""
-            output_file = open(output_filename, "w+")
+            file = open(output_filename, "w+")
 
             """receive the filesize from the server"""
-            file_size = client.recv(SIZE).decode(FORMAT)
-            # print(file_size)
+            LEN = client.recv(SIZE).decode(FORMAT)
 
-            """receive the content if file from the server"""
-            data = client.recv(int(file_size)).decode(FORMAT)
-            """write the contents of file into the file"""
-            output_file.write(data)
+            """Initial received size is 0 bytes"""
+            received_size = 0
+
+            """Check if all expected bytes are received"""
+            while True:
+
+                """
+                Check if all expected bytes are received
+                Comments: converted to string due to a bug
+                """
+                if str(LEN) == str(received_size):
+                    break
+
+                """receive the content if file from the server"""
+                data = client.recv(SIZE).decode(FORMAT)
+
+                """Recalculate received bytes"""
+                received_size += len(data)
+
+                """write the contents of file into the file"""
+                file.write(data)
+
             """close the file"""
-            output_file.close()
+            file.close()
 
-        # quit the program and close connection
+            """quit the program and close connection"""
         elif command == 'quit'.casefold():
             print("Exiting program!")
-            # exit(0)
             break
 
-        """receive the message from the server"""
-        print(client.recv(SIZE).decode(FORMAT))
-
     client.close()
+
+
+def get_size(filename):
+    """open file in read permission"""
+    file = open(filename, "r")
+
+    LEN = 0
+
+    """
+    read the contents in the original file and save the length
+    Comments: os.path.getsize was reading the file size incorrectly
+    """
+    while True:
+        data = file.read(SIZE)
+        if not data:
+            break
+        LEN += len(data)
+
+    """ Closing the file. """
+    file.close()
+    return LEN
 
 
 if __name__ == "__main__":
