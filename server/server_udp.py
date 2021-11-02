@@ -68,7 +68,6 @@ def main():
 
             """Generate the output file name"""
             output_filename = remove_suffix(file_name, '.txt') + '_anon.txt'
-            print(output_filename)
 
             """Open the output file with write permission"""
             output_file = open(output_filename, 'w+')
@@ -80,9 +79,6 @@ def main():
             print(f"[SUCCESS] File %s anonymized. Output file is %s." % (file_name, output_filename))
             message = "Server response: File %s anonymized. Output file is %s." % (file_name, output_filename)
             output_file.close()
-
-            file_size = os.path.getsize(output_filename)
-            print(file_size)
 
             server.sendto(message.encode(FORMAT), addr)  # send message to client
 

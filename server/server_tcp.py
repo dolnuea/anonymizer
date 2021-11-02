@@ -42,7 +42,7 @@ def main():
             """Listen to command from client"""
             user_input = server.recv(SIZE)
             user_input = user_input.decode(FORMAT)
-            print(user_input)
+            print(f"[RECV]" + user_input)
 
             user_input = user_input.split()
             command = user_input[0].lower()
@@ -102,9 +102,6 @@ def main():
                 print(f"[RECV] Server response: File %s anonymized. Output file is %s." % (filename, filename))
                 message = "Server response: File %s anonymized. Output file is %s." % (filename, filename)
                 output_file.close()
-
-                file_size = os.path.getsize(filename)
-                print(file_size)
 
                 """send message to client"""
                 server.send(message.encode(FORMAT))

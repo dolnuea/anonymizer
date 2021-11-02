@@ -32,9 +32,9 @@ def main():
 
         user_input = input("Enter command:")
         """split the command into parts"""
-        command_args = user_input.lower().split()
+        command_args = user_input.split()
         """get the command"""
-        command = command_args[0]
+        command = command_args[0].lower()
 
         """send the commands to the Server"""
         client.send(user_input.encode(FORMAT))
