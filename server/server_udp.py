@@ -12,7 +12,7 @@ import os
 import socket
 import sys
 
-IP = '169.226.22.20'
+IP = ''
 PORT = int(sys.argv[1])
 SIZE = 1000  # Size is 1000 bytes
 FORMAT = "utf-8"

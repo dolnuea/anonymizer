@@ -28,9 +28,9 @@ def main():
 
         user_input = input("Enter command:")
         """split the command into parts"""
-        split_input = user_input.split()
+        command_args = user_input.split()
         """get the command"""
-        command = split_input[0]
+        command = command_args[0]
 
         """send the commands to the Server"""
         client.sendto(user_input.encode(FORMAT), ADDR)
@@ -40,7 +40,7 @@ def main():
             print("Awaiting server response.")
 
             """get the file name from the command line argument"""
-            input_filename = split_input[1]
+            input_filename = command_args[1]
 
             """Stop and wait Sender"""
             sender(input_filename, ADDR, client)
@@ -63,7 +63,7 @@ def main():
         elif command == 'GET'.casefold():
 
             """Get the output file name from the command line arguments"""
-            output_filename = split_input[1]
+            output_filename = command_args[1]
 
             """Stop and wait receiver"""
             receiver(output_filename, client)
@@ -76,7 +76,7 @@ def main():
             """quit the program and close connection"""
         elif command == 'quit'.casefold():
             print("Exiting program!")
-            exit(0)
+            client.close()
             break
 
     client.close()
@@ -145,7 +145,7 @@ def sender(filename, dest_addr, conn):
             except socket.timeout:
                 message = "Did not receive ACK. Terminating."
                 print(message)
-                return acknowledged
+                conn.close()
 
 
 def receiver(filename, conn):
@@ -193,6 +193,7 @@ def receiver(filename, conn):
             message = "Did not receive data. Terminating."
             print(message)
             file.close()
+            conn.close()
             return
 
         try:
@@ -206,6 +207,7 @@ def receiver(filename, conn):
             message = "Data transmission terminated prematurely."
             print(message)
             file.close()
+            conn.close()
             return
 
     file.close()
