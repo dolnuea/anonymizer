@@ -13,17 +13,13 @@ import os
 import socket
 import sys
 
-IP = '169.226.22.20'
+IP = ''
 PORT = int(sys.argv[1])
-ADDR = (IP, PORT)
 SIZE = 1000
 FORMAT = "utf-8"
 
 
 def main():
-    """This will tell the IP address (I put it for easiness)"""
-    print("IP: " + socket.gethostbyname(socket.gethostname()))
-
     while True:
         print("[STARTING] Server is starting.")
 
@@ -31,7 +27,7 @@ def main():
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         """ Bind the IP and PORT to the server. """
-        server.bind(ADDR)
+        server.bind((IP, PORT))
 
         """ Server is listening, i.e., server is now waiting for the client to connected. """
         server.listen()
@@ -60,16 +56,17 @@ def main():
                 """open the output file in write permission: if DNE then create a new file"""
                 file = open(filename, "w+")
 
-                data = server.recv(SIZE).decode(FORMAT)
-
                 """Check if all expected bytes are received"""
-                while data:
+                while True:
+                    """receive the content if file from the server"""
+                    data = server.recv(SIZE).decode(FORMAT)
 
                     """write the contents of file into the file"""
                     file.write(data)
 
-                    """receive the content if file from the server"""
-                    data = server.recv(SIZE).decode(FORMAT)
+                    """Check if the final chunk of data is being received"""
+                    if len(data) < SIZE:
+                        break
 
                 """close the file"""
                 file.close()
@@ -80,7 +77,7 @@ def main():
                 """send message to client"""
                 server.send(message.encode(FORMAT))
 
-            # Anonymize the file
+                """Anonymize the file"""
             elif command == 'keyword'.casefold():
 
                 """ Receiving Keyword and target file"""
@@ -127,7 +124,7 @@ def main():
                 file.close()
 
                 """Get the File size"""
-                LEN = str(get_size(filename))  # str(os.path.getsize(output_filename))
+                LEN = str(os.path.getsize(filename))
 
                 """send the file size over to the server"""
                 server.send(LEN.encode(FORMAT))
@@ -165,27 +162,6 @@ def remove_suffix(input_string, suffix):
     if suffix and input_string.endswith(suffix):
         return input_string[:-len(suffix)]
     return input_string
-
-
-def get_size(filename):
-    """open file in read permission"""
-    file = open(filename, "r")
-
-    LEN = 0
-
-    """
-    read the contents in the original file and save the length
-    Comments: os.path.getsize was reading the file size incorrectly
-    """
-    while True:
-        data = file.read(SIZE)
-        if not data:
-            break
-        LEN += len(data)
-
-    """ Closing the file. """
-    file.close()
-    return LEN
 
 
 if __name__ == "__main__":

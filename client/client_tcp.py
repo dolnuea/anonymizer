@@ -4,10 +4,9 @@ ICSI 516
 11/03/2021
 Project 1
 
-References:
-https://www.youtube.com/watch?v=MEcL0-3k-2c
-https://stackoverflow.com/questions/34252273/what-is-the-difference-between-socket-send-and-socket-sendall/34252690
-https://stackoverflow.com/questions/29110620/how-to-download-file-from-local-server-in-python
+For the base of TCP implementation for both server and client,
+I have used the reference, https://www.youtube.com/watch?v=MEcL0-3k-2c,
+which is an example of sending and receiving a file in TCP connection.
 https://stackoverflow.com/questions/17667903/python-socket-receive-large-amount-of-data
 """
 import socket
@@ -33,9 +32,9 @@ def main():
 
         user_input = input("Enter command:")
         """split the command into parts"""
-        split_input = user_input.split()
+        command_args = user_input.split()
         """get the command"""
-        command = split_input[0]
+        command = command_args[0]
 
         """send the commands to the Server"""
         client.send(user_input.encode(FORMAT))
@@ -45,11 +44,12 @@ def main():
             print("Awaiting server response.")
 
             """get the file name from the command line argument"""
-            filename = split_input[1]
+            filename = command_args[1]
 
             """open file in read permission"""
             file = open(filename, "r")
 
+            """Read 1000 bytes of data from the file"""
             data = file.read(SIZE)
 
             """Read and send the contents in the file"""
@@ -73,7 +73,7 @@ def main():
         elif command == 'GET'.casefold():
 
             """extract the output file name from the command line arguments"""
-            filename = split_input[1]
+            filename = command_args[1]
 
             """open the output file in write permission: if DNE then create a new file"""
             file = open(filename, "w+")
@@ -106,7 +106,7 @@ def main():
             """close the file"""
             file.close()
 
-            print(f"[RECV] File %s downloaded." % filename)
+            print("File %s downloaded." % filename)
 
             """quit the program and close connection"""
         elif command == 'quit'.casefold():
@@ -114,27 +114,6 @@ def main():
             break
 
     client.close()
-
-
-def get_size(filename):
-    """open file in read permission"""
-    file = open(filename, "r")
-
-    LEN = 0
-
-    """
-    read the contents in the original file and save the length
-    Comments: os.path.getsize was reading the file size incorrectly
-    """
-    while True:
-        data = file.read(SIZE)
-        if not data:
-            break
-        LEN += len(data)
-
-    """ Closing the file. """
-    file.close()
-    return LEN
 
 
 if __name__ == "__main__":
