@@ -110,7 +110,7 @@ def sender(filename, dest_addr, conn):
     file.close()
 
     """Get the file size, LEN, in string"""
-    LEN = str(get_size(filename))  # str(os.path.getsize(filename))
+    LEN = str(get_size(filename))
 
     """Send LEN message"""
     conn.sendto(LEN.encode(FORMAT), dest_addr)
