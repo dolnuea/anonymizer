@@ -43,7 +43,7 @@ def main():
             """Listen to command from client"""
             user_input = server.recv(SIZE)
             user_input = user_input.decode(FORMAT)
-            print(f"[RECV]" + user_input)
+            # print(f"[RECV]" + user_input)
 
             user_input = user_input.split()
             command = user_input[0].lower()
