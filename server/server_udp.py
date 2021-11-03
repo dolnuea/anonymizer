@@ -11,6 +11,7 @@ reliability.
 import os
 import socket
 import sys
+import re
 
 IP = ''
 PORT = int(sys.argv[1])
@@ -21,7 +22,6 @@ FORMAT = "utf-8"
 def main():
     """ Staring a UDP socket. """
     server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
 
     """ Bind the IP and PORT to the server. """
     server.bind((IP, PORT))
@@ -74,8 +74,9 @@ def main():
             output_file = open(output_filename, 'w+')
 
             """ Anonymizing File """
-            data = data.replace(keyword, ''.join('X' * len(keyword)))
-            output_file.write(data)
+            compiled_data = re.compile(keyword, re.IGNORECASE)
+            anonymized_data = compiled_data.sub(''.join('X' * len(keyword)), data)
+            output_file.write(anonymized_data)
 
             print(f"[SUCCESS] File %s anonymized. Output file is %s." % (file_name, output_filename))
             message = "Server response: File %s anonymized. Output file is %s." % (file_name, output_filename)

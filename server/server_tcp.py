@@ -12,6 +12,7 @@ https://stackoverflow.com/questions/17667903/python-socket-receive-large-amount-
 import os
 import socket
 import sys
+import re
 
 IP = ''
 PORT = int(sys.argv[1])
@@ -43,7 +44,7 @@ def main():
             """Listen to command from client"""
             user_input = server.recv(SIZE)
             user_input = user_input.decode(FORMAT)
-            # print(f"[RECV]" + user_input)
+            print(f"[RECV]" + user_input)
 
             user_input = user_input.split()
             command = user_input[0].lower()
@@ -53,6 +54,9 @@ def main():
 
                 """Get the file name from the command"""
                 filename = user_input[1]
+
+                LEN = server.recv(SIZE).decode(FORMAT)
+                received = 0
 
                 """open the output file in write permission: if DNE then create a new file"""
                 file = open(filename, "w+")
@@ -65,8 +69,10 @@ def main():
                     """write the contents of file into the file"""
                     file.write(data)
 
+                    received += len(data)
+
                     """Check if the final chunk of data is being received"""
-                    if len(data) < SIZE:
+                    if received == int(LEN):
                         break
 
                 """close the file"""
@@ -97,8 +103,9 @@ def main():
                 output_file = open(filename, 'w+')
 
                 """ Anonymizing File """
-                data = data.replace(keyword, ''.join('X' * len(keyword)))
-                output_file.write(data)
+                compiled_data = re.compile(keyword, re.IGNORECASE)
+                anonymized_data = compiled_data.sub(''.join('X' * len(keyword)), data)
+                output_file.write(anonymized_data)
 
                 print(f"[RECV] Server response: File %s anonymized. Output file is %s." % (filename, filename))
                 message = "Server response: File %s anonymized. Output file is %s." % (filename, filename)

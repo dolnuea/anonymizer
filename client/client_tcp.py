@@ -11,7 +11,6 @@ https://stackoverflow.com/questions/17667903/python-socket-receive-large-amount-
 """
 import socket
 import sys
-import os
 
 IP = sys.argv[1]
 PORT = int(sys.argv[2])
@@ -46,6 +45,8 @@ def main():
 
             """get the file name from the command line argument"""
             filename = command_args[1]
+
+            client.send(str(get_size(filename)).encode(FORMAT))
 
             """open file in read permission"""
             file = open(filename, "r")
