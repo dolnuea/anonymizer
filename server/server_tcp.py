@@ -42,7 +42,7 @@ def main():
             """Listen to command from client"""
             user_input = server.recv(SIZE)
             user_input = user_input.decode(FORMAT)
-            print(f"[RECV]" + user_input)
+            #print(f"[RECV]" + user_input)
 
             user_input = user_input.split()
             command = user_input[0].lower()
@@ -71,7 +71,7 @@ def main():
                 """close the file"""
                 file.close()
 
-                print(f"[RECV] File uploaded.")
+                #print(f"[RECV] File uploaded.")
                 message = "Server response: File uploaded."
 
                 """send message to client"""
