@@ -23,8 +23,8 @@ SIZE = 1000
 def main():
     """ Staring a TCP socket. """
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
-    client.settimeout(None)
     """ Connecting to the server. """
     client.connect(ADDR)
 

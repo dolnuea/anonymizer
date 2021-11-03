@@ -25,8 +25,7 @@ def main():
 
         """ Staring a TCP socket. """
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-        server.settimeout(None)
+        server.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
         """ Bind the IP and PORT to the server. """
         server.bind((IP, PORT))
