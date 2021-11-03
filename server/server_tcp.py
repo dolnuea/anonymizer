@@ -26,6 +26,8 @@ def main():
         """ Staring a TCP socket. """
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+        server.settimeout(None)
+
         """ Bind the IP and PORT to the server. """
         server.bind((IP, PORT))
 
@@ -71,7 +73,7 @@ def main():
                 """close the file"""
                 file.close()
 
-                #print(f"[RECV] File uploaded.")
+                print(f"[RECV] File uploaded.")
                 message = "Server response: File uploaded."
 
                 """send message to client"""

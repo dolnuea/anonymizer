@@ -24,6 +24,7 @@ def main():
     """ Staring a TCP socket. """
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+    client.settimeout(None)
     """ Connecting to the server. """
     client.connect(ADDR)
 
@@ -114,6 +115,17 @@ def main():
             break
 
     client.close()
+
+
+def get_size(filename):
+    file = open(filename, 'r')
+    LEN = 0
+    while True:
+        data = file.read(SIZE)
+        if not data:
+            break
+        LEN += len(data)
+    return LEN
 
 
 if __name__ == "__main__":

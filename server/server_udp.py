@@ -22,6 +22,7 @@ def main():
     """ Staring a UDP socket. """
     server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
+
     """ Bind the IP and PORT to the server. """
     server.bind((IP, PORT))
 
