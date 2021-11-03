@@ -73,7 +73,6 @@ def main():
 
             """Download the file from the Server"""
         elif command == 'GET'.casefold():
-
             """extract the output file name from the command line arguments"""
             filename = command_args[1]
 
@@ -109,7 +108,6 @@ def main():
             file.close()
 
             print("File %s downloaded." % filename)
-
             """quit the program and close connection"""
         elif command == 'quit'.casefold():
             print("Exiting program!")
