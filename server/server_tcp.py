@@ -26,6 +26,7 @@ def main():
 
         """ Staring a TCP socket. """
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        """To fix the problem I having with VM, I've used the resource: https://stackoverflow.com/questions/31826762/python-socket-send-immediately"""
         server.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
         """ Bind the IP and PORT to the server. """

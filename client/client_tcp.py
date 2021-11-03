@@ -22,6 +22,7 @@ SIZE = 1000
 def main():
     """ Staring a TCP socket. """
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    """To fix the problem I having with VM, I've used the resource: https://stackoverflow.com/questions/31826762/python-socket-send-immediately"""
     client.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
     """ Connecting to the server. """
